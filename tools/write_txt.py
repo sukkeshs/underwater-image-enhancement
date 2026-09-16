@@ -2,26 +2,16 @@ import os
 
 
 def getfiles():
-    filenames=os.listdir('../DATA/EUVP')
+    path = 'D:/uwenh/UWEnhancement/DATA/Test/gt'
+    filenames = [f for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff'))]
     print(filenames)
     return filenames
 
 
-
 if __name__ == '__main__':
 
-    if not os.path.exists('train.txt'):
-        os.mknod('train.txt')
-
     a = getfiles()
-    # a.spilt('')
-    l = len(a)
-    with open("train.txt", "w") as f:
-        for i in range(l):
-            print(a[i])
-            x = a[i]
-            f.write(x)
-            f.write('\n')
-        f.close()
-
-    print()
+    with open("test_time.txt", "w") as f:
+        for filename in a:
+            print(filename)
+            f.write(filename + '\n')

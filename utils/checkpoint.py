@@ -36,13 +36,14 @@ def resume(filename,
     else:
         checkpoint = torch.load(filename)
     if "state_dict" in checkpoint.keys():
-        checkpoint = remove_prefix(checkpoint['state_dict'], 'module.')
+        state_dict = remove_prefix(checkpoint['state_dict'], 'module.')
     else:
-        checkpoint = remove_prefix(checkpoint, 'module.')
-    model.load_state_dict(checkpoint)
+        state_dict = remove_prefix(checkpoint, 'module.')
+    model.load_state_dict(state_dict)
     logger.info('load checkpoint from %s', filename)
-    epoch = checkpoint['meta']['epoch']
-    iter = checkpoint['meta']['iter']
+    meta = checkpoint.get('meta', {})
+    epoch = meta.get('epoch', 1)
+    iter = meta.get('iter', 0)
     if 'optimizer' in checkpoint and resume_optimizer:
         optimizer.load_state_dict(checkpoint['optimizer'])
     logger.info('resumed epoch %d, iter %d', epoch, iter)

@@ -6,8 +6,8 @@ model = dict(type='UIEC2Net',
              get_parameter=True)
 dataset_type = 'AlignedDataset'
 
-data_root_train = '/home/PJLAB/wangyudong/code/wyd/UW/DATA/Train/'                  # data root, default = DATA
-data_root_test = '/home/PJLAB/wangyudong/code/wyd/UW/DATA/Test/'
+data_root_train = './DATA/Train/'                  # data root, default = DATA
+data_root_test = './DATA/Test/'
 train_ann_file_path = 'train.txt'        # txt file for loading images, default = train.txt
 val_ann_file_path = 'test_time.txt'          # txt file for loading images (validate during training process), default = test.txt
 test_ann_file_path = 'test_time.txt'         # txt file for loading images, default = test.txt
@@ -83,9 +83,10 @@ total_epoch = 1000
 total_iters = None                      # epoch before iters,
 work_dir = './checkpoints/UIEC2Net/1'      #
 load_from = None                        # only load network parameters
-resume_from = None                      # resume training
+resume_from = './checkpoints/UIEC2Net/1/epoch_401.pth'   # resume training
 save_freq_iters = 500                   # saving frequent (saving every XX iters)
 save_freq_epoch = 1                     # saving frequent (saving every XX epoch(s))
 log_level = 'INFO'                      # The level of logging.
 
 savepath = 'results/UIEC2Net'
+use_visdom = False

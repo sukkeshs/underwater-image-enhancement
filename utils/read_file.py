@@ -3,11 +3,10 @@ import os.path as osp
 import platform
 import argparse
 import sys
+import importlib
 from addict import Dict
 import tempfile
 from yapf.yapflib.yapf_api import FormatCode
-sys.path.append('importlib')
-from importlib import _bootstrap
 if platform.system() == 'Windows':
     import regex as re
 else:
@@ -50,7 +49,7 @@ class Config:
         if cfg_text:
             text = cfg_text
         elif filename:
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
                 text = f.read()
         else:
             text = ''
@@ -94,13 +93,13 @@ class Config:
             temp_config_file.close()
 
             cfg_text = filename + '\n'
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
                 cfg_text += f.read()
         return cfg_dict, cfg_text
 
     @staticmethod
     def _validate_py_syntax(filename):
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         try:
             ast.parse(content)
@@ -119,13 +118,13 @@ class Config:
             fileBasename=file_basename,
             fileBasenameNoExtension=file_basename_no_extension,
             fileExtname=file_extname)
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
             config_file = f.read()
         for key, value in support_templates.items():
             regexp = r'\{\{\s*' + str(key) + r'\s*\}\}'
             value = value.replace('\\', '/')
             config_file = re.sub(regexp, value, config_file)
-        with open(temp_config_name, 'w') as tmp_config_file:
+        with open(temp_config_name, 'w', encoding='utf-8', errors='ignore') as tmp_config_file:
             tmp_config_file.write(config_file)
 
     def __repr__(self):
@@ -270,24 +269,8 @@ def check_file_exist(filename, msg_tmpl='file "{}" does not exist'):
 
 
 def import_module(name, package=None):
-    """Import a module.
-
-    The 'package' argument is required when performing a relative import. It
-    specifies the package to use as the anchor point from which to resolve the
-    relative import to an absolute import.
-
-    """
-    level = 0
-    if name.startswith('.'):
-        if not package:
-            msg = ("the 'package' argument is required to perform a relative "
-                   "import for {!r}")
-            raise TypeError(msg.format(name))
-        for character in name:
-            if character != '.':
-                break
-            level += 1
-    return _bootstrap._gcd_import(name[level:], package, level)
+    """Import a module by name."""
+    return importlib.import_module(name, package=package)
 
 
 # # try

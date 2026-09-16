@@ -11,16 +11,16 @@ import os.path as osp
 from torch.nn.parallel import DataParallel
 import collections
 import visdom
-from UW.utils.read_file import Config
-from UW.core.Models import build_network
-from UW.core.Datasets import build_dataset, build_dataloader
-from UW.core.Optimizer import build_optimizer, build_scheduler
-from UW.utils import (mkdir_or_exist, get_root_logger,
-                      save_epoch, save_latest, save_item,
-                      resume, load)
-from UW.core.Losses import build_loss
-from UW.utils.Visualizer import Visualizer
-from UW.utils.save_image import normimage, normPRED
+from utils.read_file import Config
+from core.Models import build_network
+from core.Datasets import build_dataset, build_dataloader
+from core.Optimizer import build_optimizer, build_scheduler
+from utils import (mkdir_or_exist, get_root_logger,
+                   save_epoch, save_latest, save_item,
+                   resume, load)
+from core.Losses import build_loss
+from utils.Visualizer import Visualizer
+from utils.save_image import normimage, normPRED
 
 from tensorboardX import SummaryWriter
 TORCH_VERSION = torch.__version__
@@ -33,7 +33,7 @@ def get_host_info():
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
-    parser.add_argument('--config',type=str, default='/home/dong/GitHub_Frame/UW/config/UWCNN.py',
+    parser.add_argument('--config',type=str, default='config/UIEC2Net.py',
                         help='train config file path')
     parser.add_argument('--work_dir', help='the dir to save logs and models,')
     group_gpus = parser.add_mutually_exclusive_group()
@@ -88,8 +88,10 @@ if __name__ == '__main__':
     Scheduler = build_scheduler(cfg.lr_config)
     logger.info('-' * 20 + 'finish build optimizer' + '-' * 20)
 
+    ite_num = 0
+    start_epoch = 1
     if cfg.resume_from:
-        start_epoch, ite_num = resume(cfg.resume_from, model, optimizer, logger, )
+        start_epoch, ite_num = resume(cfg.resume_from, model, optimizer, logger, resume_optimizer=False)
     elif cfg.load_from:
         load(cfg.load_from, model, logger)
 
@@ -116,15 +118,15 @@ if __name__ == '__main__':
         len(cfg.gpu_ids))
     logger.info('-' * 20 + 'finish build dataloader' + '-' * 20)
 
-    visualizer = Visualizer()
-    vis = visdom.Visdom()
+    use_visdom = cfg.get('use_visdom', False)
+    visualizer = Visualizer() if use_visdom else None
+    vis = visdom.Visdom() if use_visdom else None
     criterion_ssim_loss = build_loss(cfg.loss_ssim)
     # criterion_l1_loss = build_loss(cfg.loss_l1)
     # criterion_perc_loss = build_loss(cfg.loss_perc)
     # criterion_tv_loss = build_loss(cfg.loss_tv)
 
-    ite_num = 0
-    start_epoch = 1     # start range at 1-1 = 0
+    # keep resume values when resuming from checkpoints
     running_loss = 0.0
     running_tar_loss = 0.0
     ite_num4val = 0
@@ -186,9 +188,10 @@ if __name__ == '__main__':
             losses['loss_tv'] = loss_tv.data.cpu()
             losses['loss_perc'] = loss_perc.data.cpu()
             losses['total_loss'] = loss.data.cpu()
-            visualizer.plot_current_losses(epoch + 1,
-                                           float(i) / len(data_loader),
-                                           losses)
+            if visualizer is not None:
+                visualizer.plot_current_losses(epoch + 1,
+                                               float(i) / len(data_loader),
+                                               losses)
             # after iter
             time_ = time.time() - t
             t = time.time()
@@ -206,7 +209,8 @@ if __name__ == '__main__':
                 shows.append(inputshow.transpose([2, 0, 1]))
                 shows.append(gtshow.transpose([2, 0, 1]))
                 shows.append(outshow.transpose([2, 0, 1]))
-                vis.images(shows, nrow=4, padding=3, win=1, opts=dict(title='Output images'))
+                if vis is not None:
+                    vis.images(shows, nrow=4, padding=3, win=1, opts=dict(title='Output images'))
                 ite_num4val = 0
             if ite_num % 100 == 0:
                 save_latest(model, optimizer, cfg.work_dir, epoch, ite_num)
